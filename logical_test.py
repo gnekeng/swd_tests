@@ -30,17 +30,6 @@ thai_texts = {
     '9': "เก้า",
 }
 
-ten_digit_thai_texts = {
-    '2': "ยี่",
-    '3': "สาม",
-    '4': "สี่",
-    '5': "ห้า",
-    '6': "หก",
-    '7': "เจ็ด",
-    '8': "แปด",
-    '9': "เก้า",
-}
-
 def convert_to_thai_text(str_number):
     if str_number == '0':
         return "ศูนย์"
