@@ -53,13 +53,16 @@ def convert_to_thai_text(str_number):
         if str_number[index] == '0':
             continue
         
-        if index == 1:
-            if str_number[index] in ten_digit_thai_texts:
-                result += ten_digit_thai_texts[str_number[index]]
-            if index in thai_units:
-                result += thai_units[index]
-        elif index == 0 and str_number[index] == '1' and len_num > 1:
+        
+        if index == 0 and str_number[index] == '1' and len_num > 1: # 1 in unit digit condition
             result += "เอ็ด"
+        elif index == 1 and (
+            str_number[index] == '1' or str_number[index] == '2'
+        ): # 1 or 2 ten digit condition
+            if str_number[index] == '1':
+                result += "สิบ"
+            else:
+                result += "ยี่สิบ"
         elif str_number[index] in thai_texts:
             result += thai_texts[str_number[index]]
             if index in thai_units:
