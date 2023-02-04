@@ -353,7 +353,6 @@ class SchoolHierarchyAPIView(APIView):
 
         pattern: in `data_pattern` variable below.
 
-        """
 
         data_pattern = [
             {
@@ -921,10 +920,48 @@ class SchoolHierarchyAPIView(APIView):
                 }
             }
         ]
+        """
 
-        your_result = []
+        personnels = (
+            Personnel.objects.all()
+                .order_by(
+                    'school_class__school__title',
+                    'school_class__class_order',
+                    'personnel_type',
+                    'first_name',
+                    'last_name',
+                )
+        )
+        if not personnels:
+            return Response(
+                {"message": "Not found any personnel."},
+                status=status.HTTP_404_NOT_FOUND)
+            
+        datas = []
+        schools =  list(personnels.values_list('school_class__school__title', flat=True).distinct().order_by('school_class__school__title'))
+        for school in schools:
+            datas.append({
+                'school': school,
+            })
 
-        return Response(your_result, status=status.HTTP_200_OK)
+        for school_data in datas:
+            for class_order in list(personnels.filter(school_class__school__title=school_data['school']).values_list('school_class__class_order', flat=True).distinct()):
+                school_data[f'class {class_order}'] = {}
+                for teacher in personnels.filter(
+                                        school_class__school__title=school_data['school'],
+                                        school_class__class_order=class_order,
+                                        personnel_type=0,
+                                        ):
+                    school_data[f'class {class_order}'][f'Teacher: {teacher.first_name} {teacher.last_name}'] = []
+                    for student in personnels.filter(
+                                            school_class__school__title=school_data['school'],
+                                            school_class__class_order=class_order,
+                                            ).exclude(personnel_type=0):
+                        school_data[f'class {class_order}'][f'Teacher: {teacher.first_name} {teacher.last_name}'].append({
+                            f'{student.get_personnel_type_display()}': f"{student.first_name} {student.last_name}"
+                        })
+                        
+        return Response(datas, status=status.HTTP_200_OK)
 
 
 class SchoolStructureAPIView(APIView):
