@@ -31,11 +31,12 @@ class Personnel(models.Model):
     last_name = models.CharField(max_length=50, null=False, blank=False)
     school_class = models.ForeignKey(Classes, on_delete=models.CASCADE, null=False, blank=False)
     personnel_type = models.IntegerField(default=2, null=False, blank=False,
-                                         choices=((0, "class_teacher"),  (1, "head_of_the_room"), (2, "student")))
+                                         choices=((0, "Teacher"),  (1, "Head of the room"), (2, "Student")))
     
     """
         -  ผมแก้ model นิดหน่อยนะครับ ตัวลำดับใน choice มันสลับกัน
-        -  เนื่องจากถ้าเขียนแบบที่ให้มาเลยจะทำให้ ใช้ method get_FOO_display ไม่ได้ผมจึงต้องแก้
+        เนื่องจากถ้าเขียนแบบที่ให้มาเลยจะทำให้ ใช้ method get_FOO_display/get_personnel_type_display ไม่ได้ผมจึงต้องแก้
+        -  แก้ชื่อเรียกแต่ละ personnel_type จาก snake_case เป็นตาม data pattern ใน PersonnelDetailsAPIView (get)
     """
     # personnel_type = models.IntegerField(default=2, null=False, blank=False,
     #                                      choices=(("class_teacher", 0),  ("head_of_the_room", 1), ("student", 2)))

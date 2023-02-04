@@ -22,8 +22,8 @@ def test_get_student_score(student_id):
     print(f"\nstatus {response.status_code}\nresponse = {json.dumps(response.json(), indent=4)}\n")
 
 
-def test_personnel_details():
-    response = requests.get(url=f"{host}/personnel_details/Dorm Palace School", headers=header)
+def test_personnel_details(school_title):
+    response = requests.get(url=f"{host}/personnel_details/{school_title}", headers=header)
     print(f"\nstatus {response.status_code}\nresponse = {json.dumps(response.json(), indent=4, ensure_ascii=False)}\n")
 
 
@@ -41,8 +41,8 @@ if __name__ == '__main__':
     pass
 
     # test_create_student_score()
-    test_get_student_score(2)
-    # test_personnel_details()
+    # test_get_student_score(2)
+    test_personnel_details("Dorm Palace School")
     # test_school_hierarchy()
     # test_school_structure()
 

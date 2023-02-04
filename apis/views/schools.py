@@ -236,8 +236,8 @@ class PersonnelDetailsAPIView(APIView):
 
         rules:      - Personnel's name and School's title must be capitalize.
                     - Personnel's details order must be ordered by their role, their class order and their name.
-
-
+            
+        
         data_pattern = [
             "1. school: Dorm Palace School, role: Teacher, class: 1,name: Mark Harmon",
             "2. school: Dorm Palace School, role: Teacher, class: 2,name: Jared Sanchez",
@@ -300,13 +300,46 @@ class PersonnelDetailsAPIView(APIView):
             "59. school: Dorm Palace School, role: Student, class: 5,name: Pamela Sutton",
             "60. school: Dorm Palace School, role: Student, class: 5,name: Sarah Murphy"
         ]
+
         """
 
         school_title = kwargs.get("school_title", None)
-
+        if not school_title or type(school_title) is not str:
+            return Response(
+                {"message": "System need 'school_title' and 'school_title' must be string."},
+                status=status.HTTP_400_BAD_REQUEST)
+            
+        school = Schools.objects.filter(title=school_title).first()
+        if not school:
+            return Response(
+                {"message": f"Not found school name {school_title}."},
+                status=status.HTTP_404_NOT_FOUND)
+        
+        classes = Classes.objects.filter(school=school)
+        if not classes:
+            return Response(
+                {"message": f"Not found any class in {school_title}."},
+                status=status.HTTP_404_NOT_FOUND)
+            
+            
+        personnels = Personnel.objects.filter(school_class__in=classes).order_by(
+            'personnel_type', 'school_class__class_order', 'first_name', 'last_name'
+        )
+        if not personnels:
+            return Response(
+                {"message": f"Not found any personnel in all classes of {school_title}."},
+                status=status.HTTP_404_NOT_FOUND)
+        
         your_result = []
+        for i, personnel in enumerate(personnels):
+            order_data = f"{i+1}. "
+            school_data = f"school: {personnel.school_class.school.title.title()}, "
+            role_data = f"role: {personnel.get_personnel_type_display()}, "
+            class_data = f"class: {personnel.school_class.class_order},"
+            name_data = f"name: {personnel.first_name.capitalize()} {personnel.last_name.capitalize()}"
+            your_result.append(order_data + school_data + role_data + class_data + name_data)
 
-        return Response(your_result, status=status.HTTP_400_BAD_REQUEST)
+        return Response(your_result, status=status.HTTP_200_OK)
 
 
 class SchoolHierarchyAPIView(APIView):
