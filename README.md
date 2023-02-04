@@ -19,4 +19,4 @@
 
 ****
 หัวข้อ "SchoolStructureAPIView"
-- (get) ผมได้เปลี่ยนวิธีการ request ในไฟล์ test_api.py จากใส่ชื่อโรงเรียนไปตรงๆเป็นใช้ตัวแปรชื่อ school_title เพื่อให้เหมาะสม
+- (get) ผมได้สร้างฟังก์ชันใหม่ชื่อ recursive_school_structure ทำให้ต้องเปลี่ยนฟังก์ชัน get ให้ไม่เป็น staticmethod เพื่อที่จะให้สามารถใช้ self สำหรับเรียกใช้ฟังก์ชัน recursive_school_structure ได้

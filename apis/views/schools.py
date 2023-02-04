@@ -969,9 +969,19 @@ class SchoolHierarchyAPIView(APIView):
 
 
 class SchoolStructureAPIView(APIView):
+    
+    def recursive_school_structure(self, parent):
+        data = {"title": parent.title}
+        children = SchoolStructure.objects.filter(parent=parent)
+        if children:
+            data['sub'] = []
+            for child in children:
+                data['sub'].append(self.recursive_school_structure(child))
+                
+        return data
 
-    @staticmethod
-    def get(request, *args, **kwargs):
+    # @staticmethod
+    def get(self, request, *args, **kwargs):
         """
         [Logical Test]
 
@@ -1151,10 +1161,15 @@ class SchoolStructureAPIView(APIView):
         
         
         """
-        school_structures = list(SchoolStructure.objects.all().order_by('title').values_list('title', flat=True).distinct())
-        for school_structure in school_structures:
-            print("->", school_structure.title)
-            print("-->", school_structure.title)
+        
+        school_structures = SchoolStructure.objects.filter(parent=None)
+        if not school_structures:
+            return Response(
+                {"message": "Not found parent of school structures."},
+                status=status.HTTP_404_NOT_FOUND)
+            
         data = []
+        for parent in school_structures:
+            data.append(self.recursive_school_structure(parent))
 
         return Response(data, status=status.HTTP_200_OK)
