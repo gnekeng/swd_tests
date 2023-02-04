@@ -921,7 +921,7 @@ class SchoolHierarchyAPIView(APIView):
             }
         ]
         """
-
+        
         personnels = (
             Personnel.objects.all()
                 .order_by(
@@ -937,31 +937,35 @@ class SchoolHierarchyAPIView(APIView):
                 {"message": "Not found any personnel."},
                 status=status.HTTP_404_NOT_FOUND)
             
-        datas = []
-        schools =  list(personnels.values_list('school_class__school__title', flat=True).distinct().order_by('school_class__school__title'))
+        data = []
+        schools =  list(set(personnels.values_list('school_class__school__title', flat=True)))
         for school in schools:
-            datas.append({
+            data.append({
                 'school': school,
             })
 
-        for school_data in datas:
-            for class_order in list(personnels.filter(school_class__school__title=school_data['school']).values_list('school_class__class_order', flat=True).distinct()):
+        for school_data in data:
+            school_classes = (
+                list(
+                    set(personnels.filter(school_class__school__title=school_data['school']).values_list(
+                            'school_class__class_order', flat=True))
+                )
+            )
+            for class_order in school_classes:
                 school_data[f'class {class_order}'] = {}
-                for teacher in personnels.filter(
-                                        school_class__school__title=school_data['school'],
-                                        school_class__class_order=class_order,
-                                        personnel_type=0,
-                                        ):
-                    school_data[f'class {class_order}'][f'Teacher: {teacher.first_name} {teacher.last_name}'] = []
-                    for student in personnels.filter(
-                                            school_class__school__title=school_data['school'],
+                teachers = personnels.filter(school_class__school__title=school_data['school'],
                                             school_class__class_order=class_order,
-                                            ).exclude(personnel_type=0):
+                                            personnel_type=0, )
+                for teacher in teachers:
+                    school_data[f'class {class_order}'][f'Teacher: {teacher.first_name} {teacher.last_name}'] = []
+                    students = personnels.filter(school_class__school__title=school_data['school'],
+                                                school_class__class_order=class_order, ).exclude(personnel_type=0)
+                    for student in students:
                         school_data[f'class {class_order}'][f'Teacher: {teacher.first_name} {teacher.last_name}'].append({
                             f'{student.get_personnel_type_display()}': f"{student.first_name} {student.last_name}"
                         })
                         
-        return Response(datas, status=status.HTTP_200_OK)
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class SchoolStructureAPIView(APIView):
@@ -975,7 +979,6 @@ class SchoolStructureAPIView(APIView):
 
         pattern: in `data_pattern` variable below.
 
-        """
 
         data_pattern = [
             {
@@ -1145,7 +1148,13 @@ class SchoolStructureAPIView(APIView):
                 ]
             }
         ]
+        
+        
+        """
+        school_structures = list(SchoolStructure.objects.all().order_by('title').values_list('title', flat=True).distinct())
+        for school_structure in school_structures:
+            print("->", school_structure.title)
+            print("-->", school_structure.title)
+        data = []
 
-        your_result = []
-
-        return Response(your_result, status=status.HTTP_200_OK)
+        return Response(data, status=status.HTTP_200_OK)

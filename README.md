@@ -18,5 +18,5 @@
 - (get) ผมได้เปลี่ยนวิธีการ request ในไฟล์ test_api.py จากใส่ชื่อโรงเรียนไปตรงๆเป็นใช้ตัวแปรชื่อ school_title เพื่อให้เหมาะสม
 
 ****
-หัวข้อ "SchoolHierarchyAPIView"
+หัวข้อ "SchoolStructureAPIView"
 - (get) ผมได้เปลี่ยนวิธีการ request ในไฟล์ test_api.py จากใส่ชื่อโรงเรียนไปตรงๆเป็นใช้ตัวแปรชื่อ school_title เพื่อให้เหมาะสม
