@@ -38,29 +38,85 @@ class StudentSubjectsScoreAPIView(APIView):
 
         """
 
-        subjects_context = [{"id": 1, "title": "Math"}, {"id": 2, "title": "Physics"}, {"id": 3, "title": "Chemistry"},
-                            {"id": 4, "title": "Algorithm"}, {"id": 5, "title": "Coding"}]
+        # subjects_context = [{"id": 1, "title": "Math"}, {"id": 2, "title": "Physics"}, {"id": 3, "title": "Chemistry"},
+        #                     {"id": 4, "title": "Algorithm"}, {"id": 5, "title": "Coding"}]
 
         credits_context = [{"id": 6, "credit": 1, "subject_id_list_that_using_this_credit": [3]},
                            {"id": 7, "credit": 2, "subject_id_list_that_using_this_credit": [2, 4]},
                            {"id": 9, "credit": 3, "subject_id_list_that_using_this_credit": [1, 5]}]
 
-        credits_mapping = [{"subject_id": 1, "credit_id": 9}, {"subject_id": 2, "credit_id": 7},
-                           {"subject_id": 3, "credit_id": 6}, {"subject_id": 4, "credit_id": 7},
-                           {"subject_id": 5, "credit_id": 9}]
+        # credits_mapping = [{"subject_id": 1, "credit_id": 9}, {"subject_id": 2, "credit_id": 7},
+        #                    {"subject_id": 3, "credit_id": 6}, {"subject_id": 4, "credit_id": 7},
+        #                    {"subject_id": 5, "credit_id": 9}]
 
         student_first_name = request.data.get("first_name", None)
         student_last_name = request.data.get("last_name", None)
         subjects_title = request.data.get("subject_title", None)
         score = request.data.get("score", None)
-
-        # # Filter Objects Example
-        # DataModel.objects.filter(filed_1=value_1, filed_2=value_2, filed_2=value_3)
-
-        # # Create Objects Example
-        # DataModel.objects.create(filed_1=value_1, filed_2=value_2, filed_2=value_3)
-
-        return Response(status=status.HTTP_201_CREATED)
+        
+        if not student_first_name or type(student_first_name) is not str:
+            return Response(
+                {"message": "System need 'student_first_name' and 'student_first_name' must be string."},
+                status=status.HTTP_400_BAD_REQUEST) 
+        if not student_last_name or type(student_last_name) is not str:
+            return Response(
+                {"message": "System need 'student_last_name' and 'student_last_name' must be string."},
+                status=status.HTTP_400_BAD_REQUEST) 
+        if not subjects_title or type(subjects_title) is not str:
+            return Response(
+                {"message": "System need 'subjects_title' and 'subjects_title' must be string."},
+                status=status.HTTP_400_BAD_REQUEST) 
+        if not score or type(score) is not int:
+            return Response(
+                {"message": "System need 'score' and 'score' must be integer."},
+                status=status.HTTP_400_BAD_REQUEST) 
+        elif score < 0 or score > 100:
+            return Response(
+                {"message": "Not valid data: 'score' is only 0 to 100."},
+                status=status.HTTP_400_BAD_REQUEST) 
+        
+        
+        student = Personnel.objects.filter(
+            first_name=student_first_name,
+            last_name=student_last_name,
+            personnel_type=2
+        ).first()
+        if not student:
+            return Response(
+                {"message": f"Not found student name {student_first_name} {student_first_name}."},
+                status=status.HTTP_400_BAD_REQUEST)
+        
+        subject = Subjects.objects.filter(title=subjects_title).first()
+        student_subject_score = StudentSubjectsScore.objects.filter(
+            student=student,
+            subjects=subject,
+        ).first()
+        
+        if student_subject_score:
+            student_subject_score.score = score
+            student_subject_score.save()
+        else:
+            filtered_creadit_context = next(filter(lambda credits_context: subject.id in credits_context['subject_id_list_that_using_this_credit'], credits_context), None)
+            student_subject_score = StudentSubjectsScore(
+                student=student,
+                subjects=subject,
+                credit=filtered_creadit_context['credit'],
+                score=score,
+            )
+            student_subject_score.save()
+        
+        context_data = {
+            "student_detail": {
+                "first_name": student_subject_score.student.first_name,
+                "last_name": student_subject_score.student.last_name,
+                "school_title": student_subject_score.student.school_class.school.title,
+            },
+            "subject_title": student_subject_score.subjects.title,
+            "credit": student_subject_score.credit,
+            "score": student_subject_score.score,
+        }
+        
+        return Response(context_data, status=status.HTTP_201_CREATED)
 
 
 class StudentSubjectsScoreDetailsAPIView(APIView):

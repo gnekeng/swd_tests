@@ -7,10 +7,10 @@ header = {"Content-Type": "application/json"}
 
 
 def test_create_student_score():
-    data = {"first_name": "Beth",
-            "last_name": "Jones",
-            "subject_title": "Coding",
-            "score": 100
+    data = {"first_name": "",
+            "last_name": "",
+            "subject_title": "",
+            "score": 0
             }
 
     response = requests.post(url=f'{host}/student_score/', headers=header, data=json.dumps(data))
@@ -40,10 +40,10 @@ def test_school_structure():
 if __name__ == '__main__':
     pass
 
-    # test_create_student_score()
+    test_create_student_score()
     test_get_student_score(1)
-    # test_personnel_details()
-    # test_school_hierarchy()
-    # test_school_structure()
+    test_personnel_details()
+    test_school_hierarchy()
+    test_school_structure()
 
 
