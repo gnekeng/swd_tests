@@ -79,7 +79,7 @@ class StudentSubjectsScoreAPIView(APIView):
         student = Personnel.objects.filter(
             first_name=student_first_name,
             last_name=student_last_name,
-            personnel_type=2
+            personnel_type__in=[1, 2]
         ).first()
         if not student:
             return Response(
@@ -110,6 +110,7 @@ class StudentSubjectsScoreAPIView(APIView):
                 "first_name": student_subject_score.student.first_name,
                 "last_name": student_subject_score.student.last_name,
                 "school_title": student_subject_score.student.school_class.school.title,
+                "personnel_type": student_subject_score.student.get_personnel_type_display(),
             },
             "subject_title": student_subject_score.subjects.title,
             "credit": student_subject_score.credit,
@@ -120,9 +121,28 @@ class StudentSubjectsScoreAPIView(APIView):
 
 
 class StudentSubjectsScoreDetailsAPIView(APIView):
+    
+    #สร้างฟังก์ชันใหม่เพราะใช้หลายครั้ง
+    def get_grade(self, score):
+        if score >= 80 and score <= 100:
+            return "A"
+        elif score >= 75 and score < 80:
+            return "B+"
+        elif score >= 70 and score < 75:
+            return "B"
+        elif score >= 65 and score < 70:
+            return "C+"
+        elif score >= 60 and score < 65:
+            return "C"
+        elif score >= 55 and score < 60:
+            return "D+"
+        elif score >= 50 and score < 55:
+            return "D"
+        else:
+            return "F"
 
-    @staticmethod
-    def get(request, *args, **kwargs):
+    # @staticmethod
+    def get(self, request, *args, **kwargs):
         """
         [Backend API and Data Calculation Skill Test]
 
@@ -143,34 +163,60 @@ class StudentSubjectsScoreDetailsAPIView(APIView):
         """
 
         student_id = kwargs.get("id", None)
-
-        example_context_data = {
+        if not student_id or type(student_id) is not int:
+            return Response(
+                {"message": "System need 'student_id' and 'student_id' must be integer."},
+                status=status.HTTP_400_BAD_REQUEST) 
+            
+            
+        """    
+           - ตรงนี้ผมเข้าใจว่า personel_type 1, 2 คือ นักเรียนส่วน 0 คือครู
+           - ถ้า query ด้วย id อย่างเดียวจะได้ครูมาด้วยซึ่งถ้าได้ครูมาไม่มีทางที่เราจะ query StudentSubjectsScore เจออยู่แล้วเลยให้แจ้งเตือนไปว่าไม่พบนักเรียนคนนี้
+           - เพื่อไม่ให้ front-end/คนที่ใช้API งงว่าทำไมนักเรียนคนนี้ถึงไม่มี StudentSubjectsScore 
+           - เนื่องจาก front-end/คนที่ใช้API จะไม่ทราบว่าที่ไม่มี StudentSubjectsScore เลยเนี่ยเป็นเพราะมันไม่มีจริงๆ หรือเพราะเป็นคุณครูจึงไม่มี
+        """
+        student = Personnel.objects.filter(id=student_id, personnel_type__in=[1, 2]).first()
+        if not student:
+            return Response(
+                {"message": f"Not found student by 'student_id' eq {student_id}"},
+                status=status.HTTP_404_NOT_FOUND)
+        
+        student_subjects_score = StudentSubjectsScore.objects.filter(
+            student=student,
+        )
+        if not student_subjects_score:
+            return Response(
+                {"message": f"Not found any student subject score of {student.first_name} {student.last_name}"},
+                status=status.HTTP_404_NOT_FOUND)
+            
+        
+        context_data = {
             "student":
                 {
-                    "id": "primary key of student in database",
-                    "full_name": "student's full name",
-                    "school": "student's school name"
+                    "id": student.id,
+                    "full_name": f"{student.first_name} {student.last_name}",
+                    "school": student.school_class.school.title
                 },
-
-            "subject_detail": [
-                {
-                    "subject": "subject's title 1",
-                    "credit": "subject's credit 1",
-                    "score": "subject's score 1",
-                    "grade": "subject's grade 1",
-                },
-                {
-                    "subject": "subject's title 2",
-                    "credit": "subject's credit 2",
-                    "score": "subject's score 2",
-                    "grade": "subject's grade 2",
-                },
-            ],
-
-            "grade_point_average": "grade point average",
+            "subject_detail": [],
         }
+        
+        total_credit = 0
+        total_score_point = 0 
+        
+        for s in student_subjects_score:
+            total_credit += s.credit
+            total_score_point += s.score * s.credit
+            
+            data = {"subject": s.subjects.title,
+                    "credit": s.credit,
+                    "score": s.score,
+                    "grade": self.get_grade(s.score), }
+            
+            context_data['subject_detail'].append(data)
 
-        return Response(example_context_data, status=status.HTTP_200_OK)
+        context_data['grade_point_average'] = self.get_grade(total_score_point / total_credit)
+        
+        return Response(context_data, status=status.HTTP_200_OK)
 
 
 class PersonnelDetailsAPIView(APIView):
@@ -191,7 +237,6 @@ class PersonnelDetailsAPIView(APIView):
         rules:      - Personnel's name and School's title must be capitalize.
                     - Personnel's details order must be ordered by their role, their class order and their name.
 
-        """
 
         data_pattern = [
             "1. school: Dorm Palace School, role: Teacher, class: 1,name: Mark Harmon",
@@ -255,6 +300,7 @@ class PersonnelDetailsAPIView(APIView):
             "59. school: Dorm Palace School, role: Student, class: 5,name: Pamela Sutton",
             "60. school: Dorm Palace School, role: Student, class: 5,name: Sarah Murphy"
         ]
+        """
 
         school_title = kwargs.get("school_title", None)
 

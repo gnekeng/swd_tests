@@ -31,8 +31,14 @@ class Personnel(models.Model):
     last_name = models.CharField(max_length=50, null=False, blank=False)
     school_class = models.ForeignKey(Classes, on_delete=models.CASCADE, null=False, blank=False)
     personnel_type = models.IntegerField(default=2, null=False, blank=False,
-                                         choices=(("class_teacher", 0),  ("head_of_the_room", 1), ("student", 2)))
-
+                                         choices=((0, "class_teacher"),  (1, "head_of_the_room"), (2, "student")))
+    
+    """
+        -  ผมแก้ model นิดหน่อยนะครับ ตัวลำดับใน choice มันสลับกัน
+        -  เนื่องจากถ้าเขียนแบบที่ให้มาเลยจะทำให้ ใช้ method get_FOO_display ไม่ได้ผมจึงต้องแก้
+    """
+    # personnel_type = models.IntegerField(default=2, null=False, blank=False,
+    #                                      choices=(("class_teacher", 0),  ("head_of_the_room", 1), ("student", 2)))
 
 class Subjects(models.Model):
     title = models.CharField(max_length=50, unique=True, null=False, blank=False)
